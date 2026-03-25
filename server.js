@@ -4,6 +4,7 @@ import express from "express";
 import cors from 'cors'
 import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
+import authMiddleware from "./authMiddleware.js";
 const JWT_SECRET = 'clave_secreta_servidor'
 
 import { PrismaClient } from '@prisma/client'
@@ -20,7 +21,7 @@ const app = express();
 app.use(express.json());
 app.use(cors())
 
-app.get("/api/tareas", async (req, res) => {
+app.get("/api/tareas", authMiddleware, async (req, res) => {
    const lista = await prisma.tarea.findMany({})
    res.json(lista.map(t => {
         return {id: t.id, 
@@ -32,7 +33,7 @@ app.get("/api/tareas", async (req, res) => {
     }))
 })
 
-app.get("/api/tareas/:id", async (req, res) => {
+app.get("/api/tareas/:id", authMiddleware, async (req, res) => {
     const idPar = Number(req.params.id)
     const tarea = await prisma.tarea.findUnique({
         where: {
@@ -48,7 +49,7 @@ app.get("/api/tareas/:id", async (req, res) => {
     res.json(newT)
 })
 
-app.post('/api/tareas', async (req, res) => {
+app.post('/api/tareas', authMiddleware, async (req, res) => {
     const t = req.body
     if (t?.nombre == null)
         return res.status(400).json({error: 'El nombre es obligatorio'})
@@ -68,7 +69,7 @@ app.post('/api/tareas', async (req, res) => {
     res.status(201).json(t2)
 })
 
-app.delete('/api/tareas/:id', async (req, res) => {
+app.delete('/api/tareas/:id', authMiddleware, async (req, res) => {
     const id = Number(req.params.id)
 
     const t = await prisma.tarea.delete({
@@ -82,7 +83,7 @@ app.delete('/api/tareas/:id', async (req, res) => {
     res.status(200).send()
 })
 
-app.patch('/api/tareas/:id', async (req, res) => {
+app.patch('/api/tareas/:id', authMiddleware, async (req, res) => {
     const id = Number(req.params.id)
 
     const t = await prisma.tarea.update({
@@ -110,7 +111,7 @@ app.post('/api/auth/login', async (req, res) => {
     const token = jwt.sign(
         { id: u.id, email: u.email }, // los datos que queremos guardar en el token
         JWT_SECRET, // la clave de firma
-        { expiresIn: '1h' } // cuándo expira el token
+        { expiresIn: '4h' } // cuándo expira el token
     )
 
     return res.json({token: token})
